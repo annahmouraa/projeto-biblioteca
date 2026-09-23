@@ -71,10 +71,13 @@ def cadastrar_aluno():
         cursor.close()
         conexao.close()
 
+
         return redirect("/alunos")
+
 
     except Exception as erro:
         return f"Erro ao cadastrar aluno: {erro}"
+
 
 # Rotas para livros
 @app.route("/livros")
@@ -123,8 +126,6 @@ def cadastrar_livro():
 
 
         valores = (titulo, autor, categoria, "Disponível")
-
-
         cursor.execute(sql, valores)
         conexao.commit()
 
@@ -161,15 +162,9 @@ def listar_bibliotecarios():
     except Exception as erro:
         return f"Erro ao listar bibliotecários: {erro}"
 
-
-
-
 @app.route("/bibliotecarios/novo")
 def formulario_bibliotecario():
     return render_template("bibliotecario_form.html")
-
-
-
 
 @app.route("/bibliotecarios/cadastrar", methods=["POST"])
 def cadastrar_bibliotecario():
@@ -204,8 +199,7 @@ def cadastrar_bibliotecario():
 
     except Exception as erro:
         return f"Erro ao cadastrar bibliotecário: {erro}"
-
-
+    
 # Rotas para empréstimos
 @app.route("/emprestimos")
 def listar_emprestimos():
@@ -344,6 +338,63 @@ def cadastrar_emprestimo():
 
     except Exception as erro:
         return f"Erro ao cadastrar empréstimo: {erro}"
+
+# Rota para devolução de livro
+@app.route("/emprestimos/devolver/<int:id_emprestimo>")
+def devolver_livro(id_emprestimo):
+
+
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(dictionary=True)
+
+
+        cursor.execute("""
+            SELECT id_livro
+            FROM emprestimo
+            WHERE id_emprestimo = %s
+        """, (id_emprestimo,))
+
+
+        emprestimo = cursor.fetchone()
+
+
+        if emprestimo:
+
+
+            id_livro = emprestimo["id_livro"]
+
+
+            cursor.execute("""
+                UPDATE emprestimo
+                SET
+                    data_devolucao = CURDATE(),
+                    status = 'Devolvido'
+                WHERE id_emprestimo = %s
+            """, (id_emprestimo,))
+
+
+            cursor.execute("""
+                UPDATE livro
+                SET status = 'Disponível'
+                WHERE id_livro = %s
+            """, (id_livro,))
+
+
+            conexao.commit()
+
+
+        cursor.close()
+        conexao.close()
+
+
+        return redirect("/emprestimos")
+
+
+    except Exception as erro:
+        return f"Erro ao devolver livro: {erro}"
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
